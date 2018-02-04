@@ -1,4 +1,6 @@
-function test() {
+const {reverseText, eachNumber, run, xrun} = require('./utils')
+
+run('test', {measure: true}, () => {
   // const ops = ['+', '-', '*', '/', '']
   const ops = ['*', '']
   for (let num = 1000; num <= 9999; num++) {
@@ -6,7 +8,7 @@ function test() {
       continue
     }
     const nums = num.toString().split('')
-    const target = nums.slice().reverse().join('') // prettier-ignore
+    const target = reverseText(num.toString())
 
     for (const op1 of ops) {
       for (const op2 of ops) {
@@ -19,17 +21,12 @@ function test() {
       }
     }
   }
-}
-console.time('t1');
-test()
-console.timeEnd('t1');
+})
 
-function test2() {
+run('test2', {measure: true}, () => {
   const op = ['*', '']
   for (let i = 1000; i < 10000; i++) {
-    // console.log();
-    // i = 1395
-    c = String(i)
+    const c = String(i)
     for (let j = 0; j < op.length; j++) {
       for (let k = 0; k < op.length; k++) {
         for (let l = 0; l < op.length; l++) {
@@ -43,9 +40,5 @@ function test2() {
         }
       }
     }
-    // break
   }
-}
-console.time('t2');
-test2()
-console.timeEnd('t2');
+})

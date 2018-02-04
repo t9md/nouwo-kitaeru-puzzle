@@ -1,0 +1,24 @@
+{
+  "name": "nouwo-kitaeru-puzzle",
+  "version": "1.0.0",
+  "description": "Sandbox repo for exercise. While reading [this book](https://www.amazon.co.jp/dp/B016QEE30G/ref=dp-kindle-redirect?_encoding=UTF8&btkr=1)",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/t9md/nouwo-kitaeru-puzzle.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/t9md/nouwo-kitaeru-puzzle/issues"
+  },
+  "homepage": "https://github.com/t9md/nouwo-kitaeru-puzzle#readme",
+  "devDependencies": {
+    "prettier": "^1.10.2",
+    "standard": "^10.0.3"
+  }
+}

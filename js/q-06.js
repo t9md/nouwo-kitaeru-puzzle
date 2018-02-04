@@ -1,5 +1,7 @@
-{
-  function isLoop(num) {
+const {reverseText, p, eachNumber, run, xrun, prun, xprun} = require('./utils')
+
+prun('loop detect', {measure: true}, () => {
+  function isLoop (num) {
     const isEven = num => num % 2 === 0
     let cur = num * 3 + 1
     while (cur !== 1) {
@@ -11,16 +13,9 @@
     return false
   }
 
-  function run() {
-    const numbers = []
-    for (let i = 2; i <= 10000; i += 2) numbers.push(i)
+  const numbers = []
+  for (let i = 2; i <= 10000; i += 2) numbers.push(i)
 
-    const results = numbers.filter(num => isLoop(num))
-    console.log(results.length)
-    console.log('---------------')
-    console.log(results)
-  }
-  // const generated = generateCombination([500, 100], 3)
-  run()
-  // console.log(run)
-}
+  const result = numbers.filter(num => isLoop(num))
+  return [result.length, result]
+})

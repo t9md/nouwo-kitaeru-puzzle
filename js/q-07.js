@@ -1,92 +1,144 @@
-const {measure} = require('./utils')
-{
-  function isReversableDate(date) {
-    const binary = Number(toString(date)).toString(2)
-    const reversed = binary.split('').reverse().join('') // prettier-ignore
-    return binary === reversed
+const {
+  dateFromText,
+  getCommonLength,
+  insertCharAt,
+  padLeft,
+  measure,
+  reverseText,
+  p,
+  eachNumber,
+  run,
+  xrun,
+  prun,
+  xprun,
+  splitIntoTwoPart
+} = require('./utils')
+
+function parseDate (date) {
+  return {
+    year: date.getFullYear(),
+    month: date.getMonth() + 1,
+    date: date.getDate()
   }
+}
 
-  function parse(date) {
-    return {
-      year: date.getFullYear(),
-      month: date.getMonth() + 1,
-      date: date.getDate(),
-    }
-  }
+function dateToBinaryString (date) {
+  const pad = number => padLeft(2, number.toString(), '0')
+  const parsed = parseDate(date)
+  const textYYYYMMDD = parsed.year + pad(parsed.month) + pad(parsed.date)
+  return Number(textYYYYMMDD).toString(2)
+}
 
-  function toString(date) {
-    const pad = s => (s.length === 2 ? s : '0' + s)
-
-    let y = date.getFullYear().toString()
-    let m = pad((date.getMonth() + 1).toString())
-    let d = pad(date.getDate().toString())
-    return y + m + d
-  }
-
+run('run without tune', {measure: true}, () => {
   const ONE_DAY_MSEC = 60 * 60 * 24 * 1000
-
-  function nextDay(date) {
+  function nextDay (date) {
     return new Date(date.getTime() + ONE_DAY_MSEC)
   }
 
-  function eachDay(start, end, fn) {
-    let date = start
+  function eachDay (start, end, fn) {
     const endTime = end.getTime()
+    let date = start
     while (date.getTime() <= endTime) {
       fn(date)
       date = nextDay(date)
     }
   }
 
-  const startDay = new Date(1964, 10, 10)
-  const endDay = new Date(2020, 7, 24)
+  const startDay = dateFromText('1964/10/10')
+  const endDay = dateFromText('2020/07/24')
 
-  measure('run', () => {
-    const result = []
-    eachDay(startDay, endDay, date => {
-      if (isReversableDate(date)) {
-        console.log(parse(date))
-      }
-    })
-  })
-
-  measure('run2', () => {
-    const buildBin = (left, middle) => {
-      const right = left.split('').reverse().join('') // prettier-ignore
-      return '1001' + left + middle + right + '1001'
-    }
-    // s = 1001-01011101-1-00101011-0010
-    // X = 1001-12345678-X-12345678-1001
-    // e = 1001-10100001-1-11010001-0100
-    const pad = s => {
-      while (s.length < 8) s = '0' + s
-      return s
-    }
-
-    const startLeft = Number(toString(startDay)).toString(2).substring(4, 12)
-    const endLeft = Number(toString(endDay)).toString(2).substring(4, 12)
-    // startLeft = '01011101'
-    // endLeft = '10100001'
-    const startDecimal = parseInt(startLeft, 2)
-    const endDecimal = parseInt(endLeft, 2)
-
-    const insertSlash = dateString => {
-      const y = dateString.substring(0, 4)
-      const m = dateString.substring(4, 6)
-      const d = dateString.substring(6)
-      return y + '/' + m + '/' + d
-    }
-
-    for (let n = startDecimal; n <= endDecimal; n++) {
-      for (const middle of ['0', '1']) {
-        const binary = buildBin(pad(n.toString(2)), middle)
-        const dateString = parseInt(binary, 2).toString()
-        const parsed = Date.parse(insertSlash(dateString))
-        if (!isNaN(parsed)) {
-          console.log(parse(new Date(parsed)))
-        }
-      }
+  eachDay(startDay, endDay, date => {
+    const binary = dateToBinaryString(date)
+    if (binary === reverseText(binary)) {
+      console.log(parseDate(date))
     }
   })
+})
 
-}
+run('run by tune', {measure: true}, () => {
+  const startDay = dateFromText('1964/10/10')
+  const endDay = dateFromText('2020/07/24')
+  const buildBin = (number, middle) => {
+    const left = padLeft(8, number.toString(2), '0')
+    return '1001' + left + middle + reverseText(left) + '1001'
+  }
+  // start    = 1001-01011101-1-00101011-0010
+  // symmetic = 1001-12345678-X-87654321-1001
+  // end      = 1001-10100001-1-11010001-0100
+
+  const startLeft = dateToBinaryString(startDay).substring(4, 12) // '01011101'
+  const endLeft = dateToBinaryString(endDay).substring(4, 12) // '10100001'
+  const startDecimal = parseInt(startLeft, 2)
+  const endDecimal = parseInt(endLeft, 2)
+
+  for (let n = startDecimal; n <= endDecimal; n++) {
+    for (const middle of ['0', '1']) {
+      const binary = buildBin(n, middle)
+      const dateString = parseInt(binary, 2).toString()
+      const date = dateFromText(insertCharAt(dateString, '/', [4, 6]))
+      if (date) {
+        console.log(parseDate(date))
+      }
+    }
+  }
+})
+
+run('run by tune more sophisticated [heuristically detect common and middle]', {measure: true}, () => {
+  // 1. Transform startDate and endDate to binary form
+  //   - startDate = 1001010111011001010110010
+  //   - endDate   = 1001101000011110100010100
+  //
+  // 2. Split to left, middle and right part
+  //   - startDate = 100101011101-1-001010110010
+  //   - endDate   = 100110100001-1-110100010100
+  //
+  // 3. Detect common text part from left
+  //   - startDate = 1001-01011101-1-001010110010
+  //   - endDate   = 1001-10100001-1-110100010100
+  //                  A      B     C      D
+  //
+  //                   A: common
+  //                   B: left part vary from 01011101...10100001
+  //                   C: middle '0' or '1'
+  //                   D: right part
+  //
+  // 4. Build symmetric binary and filter invalid date such as '2000/99/32'.
+  //    leftPart        = A + B
+  //    middleChar      = C
+  //    rightPart       = reverseText(leftPart)
+  //    SymmetricBinary = leftPart + middlePart + rightPart
+
+  const startDay = dateFromText('1964/10/10')
+  const endDay = dateFromText('2020/07/24')
+
+  const startDayBinary = dateToBinaryString(startDay)
+  const endDayBinary = dateToBinaryString(endDay)
+
+  if (startDayBinary.length !== endDayBinary.length) {
+    throw new Error('different length in binary form never be synmetric')
+  }
+
+  const [startDayLeft, middle, startDayRight] = splitIntoTwoPart(startDayBinary)
+  const middleChars = middle ? ['0', '1'] : ['']
+  const [endDayLeft, _middle, endDayRight] = splitIntoTwoPart(endDayBinary)
+  const commonLength = getCommonLength(startDayLeft, endDayLeft)
+  const commonBinary = startDayBinary.substring(0, commonLength)
+  const iterationStart = startDayLeft.substring(commonLength)
+  const iterationEnd = endDayLeft.substring(commonLength)
+  const padTargetLength = iterationStart.length
+  const startDecimal = parseInt(iterationStart, 2)
+  const endDecimal = parseInt(iterationEnd, 2)
+
+  for (let n = startDecimal; n <= endDecimal; n++) {
+    for (const middleChar of middleChars) {
+      const leftPart = commonBinary + padLeft(padTargetLength, n.toString(2), '0')
+      const rightPart = reverseText(leftPart)
+      const symmetricBinary = leftPart + middleChar + rightPart
+      const dateString = insertCharAt(parseInt(symmetricBinary, 2).toString(), '/', [4, 6]) // 1966/07/13
+      const date = dateFromText(dateString)
+      if (date) {
+        console.log(parseDate(date))
+      }
+    }
+  }
+})
