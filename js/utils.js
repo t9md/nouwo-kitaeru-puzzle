@@ -66,7 +66,7 @@ function p (...args) {
 }
 
 function padLeft (targetLength, text, padString = ' ') {
-  const amount = targetLength - text.length
+  const amount = targetLength - String(text).length
   if (amount > 0) {
     return padString.repeat(amount) + text
   } else {
@@ -115,9 +115,36 @@ function dateFromText (text) {
   }
 }
 
+function countChar (text, char) {
+  return text.split(char).length - 1
+}
+
+// pick specified amount of entry from list.
+//
+//  pickByLoop([1, 2, 3], 0, 3),  // => [ 1, 2, 3 ]
+//  pickByLoop([1, 2, 3], 1, 3),  // => [ 2, 3, 1 ]
+//  pickByLoop([1, 2, 3], 2, 0),  // => []
+//  pickByLoop([1, 2, 3], 3, 3),  // => [ 1, 2, 3 ]
+//  pickByLoop([1, 2, 3], 4, 10), // => [ 1, 2, 3, 1, 2, 3, 1, 2, 3, 1 ]
+function pickByLoop (list, startIndex, amount) {
+  const picked = list.slice(startIndex, startIndex + amount)
+  while (picked.length < amount) {
+    picked.push(...list.slice(0, amount - picked.length))
+  }
+  return picked
+}
+
+function sumArray (array) {
+  return array.reduce((acc, cur) => acc + cur)
+}
+function multiplyArray (array) {
+  return array.reduce((acc, cur) => acc + cur)
+}
+
 module.exports = {
   dateFromText,
   padLeft,
+  pad: padLeft,
   measure,
   p,
   run,
@@ -128,5 +155,8 @@ module.exports = {
   eachNumber,
   insertCharAt,
   getCommonLength,
-  splitIntoTwoPart
+  splitIntoTwoPart,
+  countChar,
+  sumArray,
+  multiplyArray
 }
